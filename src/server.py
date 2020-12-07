@@ -30,8 +30,9 @@ class clienthandler:
         data = client_socket.recv(100).decode()
         print('Received: ', data)
 
-        name = self._parser.parse(data)
+        name = self._parser.parse(data)[0]
         file = open(name, "r")
+        print(name)
         lines = file.readlines()
         result = ""
         for line in lines:
@@ -45,7 +46,21 @@ class clienthandler:
 class requestParser:
 
     def parse(self, request):
-        return "index.html"
+        fileName = None
+        connectionType = None
+        lines = request.split("\r\n")
+        fileName = lines[0].split("GET ")[1].split(" HTTP")[0]
+        rest = lines[1:]
+        for line in rest:
+            if len(line.split(": ")) < 2:
+                continue
+            name = line.split(": ")[0]
+            content = line.split(": ")[1]
+            if name == "Connection":
+                connectionType = content
+        if fileName == "/":
+            fileName = "index.html"
+        return [fileName, connectionType]
 
 #creating the server and the client handler with the command line arguments
 server = server(int(sys.argv[1]))
