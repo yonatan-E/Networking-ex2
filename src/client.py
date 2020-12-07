@@ -1,19 +1,12 @@
 import socket
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-server.bind(('', 12345))
+s.connect(('127.0.0.1', 12345))
 
-server.listen(5)
+s.send(b'hello')
 
-while True:
-    client_socket, client_address = server.accept()
-    print('Connection from: ', client_address)
+data = s.recv(100)
+print("Server sent: ", data)
 
-    data = client_socket.recv(100)
-    print('Received: ', data)
-
-    client_socket.send(data.upper())        
-
-    client_socket.close()
-    print('Client disconnected')
+s.close()
