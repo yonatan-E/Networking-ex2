@@ -49,6 +49,7 @@ class clienthandler:
                 log = create_log(404, 'Not Found', 'close', ' ')
                 is_client_connected = False
             try:
+                open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpeg') else 'r'
                 f = open(file_name, 'r')
                 log = create_log(200, 'OK', connection, f.read())
             except FileNotFoundError:
@@ -59,6 +60,8 @@ class clienthandler:
 
             if connection_status = 'close':
                 is_client_connected = False
+
+        client_socket.close()
 
     @staticmethod
     def create_log(error_code, status, connection_status, content):
