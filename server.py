@@ -1,6 +1,5 @@
 import socket
 import sys
-import datetime
 
 class server:
 
@@ -35,9 +34,13 @@ class clienthandler:
             message = data.decode()
 
             #getting the file name
-            file_name = message.split("HTTP")[1].split("1.1")[0]
+            file_name = message.split("GET ")[1].split(" HTTP")[0]
             if file_name == '/':
                 file_name = 'index.html'
+            else:
+                file_name = file_name[1:]
+            
+            print(file_name)
 
             #getting the connection status
             tmp = message.find('Connection: ') + len('Connection: ')
@@ -77,7 +80,7 @@ class clienthandler:
         log += '\r\n\r\n'
 
         if len(content) > 0:
-            log += content
+            log += str(content)
 
         return log
 
