@@ -30,12 +30,18 @@ class clienthandler:
         is_client_connected = True
         while is_client_connected:
             #getting the message from the client
-            data = client_socket.recv(self.__buffer_size)
+            client_socket.settimeout(1)
+            try:
+                data = client_socket.recv(self.__buffer_size)
+            except:
+                break
             message = data.decode()
+
+            print(message)
 
             #getting the file name
             file_name = message.split('GET /')[1].split(' HTTP')[0]
-            if file_name == '/':
+            if file_name == '':
                 file_name = 'index.html'
 
             #getting the connection status
@@ -44,14 +50,14 @@ class clienthandler:
 
             #getting the correct log
             #if the file name is /redirect, the error code will be 301
-            if file_name == '‫‪redirect‬‬':
+            if file_name == 'redirect':
                 log = clientHandler.create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
                 is_client_connected = False
             #else, trying to open the file
             else:
                 try:
                     #getting the correct open mode
-                    open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpeg') else 'r'
+                    open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpg') or file_name.endswith('jpeg') else 'r'
                     f = open(file_name, open_mode)
                     content = f.read()
 
@@ -65,7 +71,9 @@ class clienthandler:
                     log = clientHandler.create_log(404, 'Not Found', 'close', '')
                     is_client_connected = False
 
-            client_socket.send(log.encode())
+            print(log.decode())
+
+            client_socket.send(log)
 
             if connection_status == 'close':
                 is_client_connected = False
@@ -75,18 +83,23 @@ class clienthandler:
     @staticmethod
     def create_log(error_code, status, connection_status, content):
 
-        log = "HTTP/1.1‬‬ " + str(error_code) + ' ' + status + '\r\n' + "Connection: " + connection_status + "\r\n"
+        log = "HTTP/1.1‬‬ " + str(error_code) + ' ' + status + '\r\n' + "Connection: " + connection_status + '\r\n'
 
         if error_code == 301:
-            log += '‫‪Location:‬‬ ‫‪/result.html‬‬'
+            log += '‫‪Location:‬‬ ‫‪/result.html‬‬\r\n'
         if error_code == 200 and content:
-            log += '‫‪Content-Length:‬‬ ' + str(len(content))
+            log += '‫‪Content-Length:‬‬ ' + str(len(content)) + '\r\n'
 
-        log += '\r\n\r\n'
+        log += '\r\n'
+
+        log = log.encode()
 
         if error_code == 200 and content:
-            log += str(content)
-
+            try:
+                log += content
+            except:
+                log += str(content).encode()
+                
         return log
 
 #creating the server and the client handler with the command line arguments
