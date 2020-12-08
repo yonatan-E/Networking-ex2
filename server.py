@@ -3,109 +3,80 @@ import sys
 import datetime
 
 class server:
+
+    __backlog = 5
     
     def __init__(self, port):
         self.__port = port
 
     def open(self, clientHandler):
-        #initializing the client handler
-        clientHandler.initializeDomainsMap()
-        
         #opening the server socket that will listen to messages from the client
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
         #binding the socket to the server port
         s.bind(('', self.__port))
+        #defining the backlog of the socket
+        s.listen(self.__backlog)
 
         while True:
-            clientHandler.handleRequest(s)
+            client_socket, client_address = s.accept()
+            print('Connection from: ', client_address)
+            clientHandler.handleRequest(client_socket)
 
 class clienthandler:
 
-    def __init__(self, fileHandler, parentServerIP, parentServerPort):
-        self.__domainsMap = {}
-        self.__fileHandler = fileHandler
-        self.__parentServerIP = parentServerIP
-        self.__parentServerPort = parentServerPort
+    __buffer_size = 1024
 
-    def handleRequest(self, sock):
-         #getting the message from the client
-        data, addr = sock.recvfrom(1024)
-        data = data.decode()
-        
-        #trying to remove domains that their ttl has expired
-        remove = []
-        for d in self.__domainsMap:
-            startTime = self.__domainsMap[d][2] 
-            ttl = self.__domainsMap[d][1]
-            if ((datetime.datetime.now() - datetime.datetime(2020, 11, 11)).total_seconds() - startTime > ttl):
-                remove.append(d)
-                self.__fileHandler.removeLine(d)
-        for rem in remove:
-            del self.__domainsMap[rem]
-        
-        result = ''
-        #checking if the given domain exists in the server
-        if data in self.__domainsMap:
-            result = data + ','
-            for prop in self.__domainsMap[data][0:-1]:
-                result += str(prop) + ','
-            result = result[0:-1]
-        #if the given domain doesn't exist in the server, then sending the request to the parent server
-        elif self.__parentServerIP != '-1' and self.__parentServerPort != -1:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.sendto(data.encode(), (self.__parentServerIP, self.__parentServerPort))
-            result2, addr2 = s.recvfrom(1024)
-            resList = result2.decode().split(',')
-            self.__domainsMap[data] = [resList[1], float(resList[2]), (datetime.datetime.now() - datetime.datetime(2020, 11, 11)).total_seconds()]
-            self.__fileHandler.addLine(data + ',' + resList[1] + ',' + resList[2] + ',' + str(self.__domainsMap[data][2]))
-            result = result2.decode()
-        #sending the result to the client
-        sock.sendto(result.encode(), addr)
+    def handleRequest(self, client_socket):
 
-    def initializeDomainsMap(self):
-        updatedLines = []
-        lines = self.__fileHandler.getLines()
-        #for every domain, checking if its line contains the time when the domain was added to the server.
-        #if it doesn't, then initializing this time to the current time
-        for line in lines:
-            properties = line.split(',')
-            properties.append((datetime.datetime.now() - datetime.datetime(2020, 11, 11)).total_seconds())
-            properties = (properties[0], properties[1], int(properties[2]), float(properties[3]))
-            self.__domainsMap[properties[0]] = properties[1:]
-            updatedLines.append(properties[0] + ',' + properties[1] + ',' + str(properties[2]) + ',' + str(properties[3]))
+        is_client_connected = True
+        while is_client_connected:
+            #getting the message from the client
+            message = sock.recv(self.__buffer_size)
+            message = data.decode()
 
-        self.__fileHandler.replaceAllLines(updatedLines)
-        
-class filehandler:
+            #getting the file name
+            tmp = message.find(' ') + 1
+            file_name = message[tmp:message.find(' ', tmp)]
+            if file_name == '/':
+                file_name = 'index.html'
 
-    def __init__(self, fileName):
-        self.__fileName = fileName
+            #getting the connection status
+            ‫‪tmp = message.find('Connection: ') + 12
+            connection_status = message[tmp:message.find(' ', tmp)]
 
-    def addLine(self, line):
-        with open(self.__fileName, "a+") as f:
-            f.write(line + "\n")
+            #getting the correct log
+            if file_name == '‫‪/redirect‬‬':
+                log = create_log(404, 'Not Found', 'close', ' ')
+                is_client_connected = False
+            try:
+                f = open(file_name, 'r')
+                log = create_log(200, 'OK', connection, f.read())
+            except FileNotFoundError:
+                log = create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', ' ')
+                is_client_connected = False
 
-    def removeLine(self, prefix):
-        lines = self.getLines()
-        with open(self.__fileName, 'w') as file:
-            for line in lines:
-                if (line.startswith(prefix) == False):
-                    file.write(line)
+            client_socket.send(log)
 
-    def getLines(self):
-        try:
-            f = open(self.__fileName, "r")
-        except:
-            f = open(self.__fileName, "w+")
+            if connection_status = 'close':
+                is_client_connected = False
 
-        lines = f.readlines()
-        f.close()
-        return lines
+    @staticmethod
+    def create_log(error_code, status, connection_status, content):
 
-    def replaceAllLines(self, newLines):
-        with open(self.__fileName, "w+") as f:
-            for line in newLines:
-                f.write(line + '\n')
+        log = '‫‪HTTP/1.1‬‬ ' + str(error_code) + ' ' + status + '\n' + 'Connection: ' + connection_status + '\n'
+
+        if error_code == 301:
+            log += '‫‪Location:‬‬ ‫‪/result.html‬‬\n'
+        if content:
+            log += '‫‪Content-Length:‬‬ ' + str(content.length())
+
+        log += '\n\n'
+
+        if content:
+            log += content
+
+        return log
+
 
 #creating the server and the client handler with the command line arguments
 server = server(int(sys.argv[1]))
