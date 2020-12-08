@@ -34,11 +34,9 @@ class clienthandler:
             message = data.decode()
 
             #getting the file name
-            file_name = message.split('GET ')[1].split(' HTTP')[0]
+            file_name = message.split('GET /')[1].split(' HTTP')[0]
             if file_name == '/':
                 file_name = 'index.html'
-            else:
-                file_name = file_name[1:]
 
             #getting the connection status
             tmp = message.find('Connection: ') + len('Connection: ')
@@ -46,7 +44,7 @@ class clienthandler:
 
             #getting the correct log
             #if the file name is /redirect, the error code will be 301
-            if file_name == '‫‪/redirect‬‬':
+            if file_name == '‫‪redirect‬‬':
                 log = clientHandler.create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
                 is_client_connected = False
             #else, trying to open the file
@@ -81,12 +79,12 @@ class clienthandler:
 
         if error_code == 301:
             log += '‫‪Location:‬‬ ‫‪/result.html‬‬'
-        if error_code == 200 and len(content) > 0:
+        if error_code == 200 and content:
             log += '‫‪Content-Length:‬‬ ' + str(len(content))
 
         log += '\r\n\r\n'
 
-        if len(content) > 0:
+        if error_code == 200 and content:
             log += str(content)
 
         return log
