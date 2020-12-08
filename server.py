@@ -34,31 +34,38 @@ class clienthandler:
             message = data.decode()
 
             #getting the file name
-            file_name = message.split("GET ")[1].split(" HTTP")[0]
+            file_name = message.split('GET ')[1].split(' HTTP')[0]
             if file_name == '/':
                 file_name = 'index.html'
             else:
                 file_name = file_name[1:]
-            
-            print(file_name)
 
             #getting the connection status
             tmp = message.find('Connection: ') + len('Connection: ')
             connection_status = message[tmp:message.find('\r\n', tmp)]
 
             #getting the correct log
+            #if the file name is /redirect, the error code will be 301
             if file_name == '‫‪/redirect‬‬':
                 log = clientHandler.create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
                 is_client_connected = False
-            try:
-                open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpeg') else 'r'
-                f = open(file_name, open_mode)
-                log = clientHandler.create_log(200, 'OK', connection_status, f.read())
-            except FileNotFoundError:
-                log = clientHandler.create_log(404, 'Not Found', 'close', '')
-                is_client_connected = False
+            #else, trying to open the file
+            else:
+                try:
+                    #getting the correct open mode
+                    open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpeg') else 'r'
+                    f = open(file_name, open_mode)
+                    content = f.read()
 
-            print(log)
+                    #if the message is empty, then closing the connection with the client
+                    if not content:
+                        break
+
+                    log = clientHandler.create_log(200, 'OK', connection_status, content)
+                #if the file was not found, the error code will be 404
+                except FileNotFoundError:
+                    log = clientHandler.create_log(404, 'Not Found', 'close', '')
+                    is_client_connected = False
 
             client_socket.send(log.encode())
 
@@ -74,7 +81,7 @@ class clienthandler:
 
         if error_code == 301:
             log += '‫‪Location:‬‬ ‫‪/result.html‬‬'
-        elif len(content) > 0:
+        if error_code == 200 and len(content) > 0:
             log += '‫‪Content-Length:‬‬ ' + str(len(content))
 
         log += '\r\n\r\n'
