@@ -62,7 +62,6 @@ class clienthandler:
             if connection_status == 'close':
                 is_client_connected = False
 
-
         client_socket.close()
 
     @staticmethod
@@ -71,8 +70,8 @@ class clienthandler:
         log = "HTTP/1.1‬‬ " + str(error_code) + ' ' + status + '\r\n' + "Connection: " + connection_status + "\r\n"
 
         if error_code == 301:
-            log += '‫‪Location:‬‬ ‫‪/result.html‬‬\r\n'
-        if content:
+            log += '‫‪Location:‬‬ ‫‪/result.html‬‬'
+        elif len(content) > 0:
             log += '‫‪Content-Length:‬‬ ' + str(len(content))
 
         log += '\r\n\r\n'
