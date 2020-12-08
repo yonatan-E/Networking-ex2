@@ -75,7 +75,7 @@ class clienthandler:
     @staticmethod
     def create_log(error_code, status, connection_status, content):
 
-        log = "HTTP/1.1‬‬ " + str(error_code) + ' ' + status + '\r\n' + "Connection: " + connection_status + "\r\n"
+        log = 'HTTP/1.1‬‬ ' + str(error_code) + ' ' + status + '\r\n' + 'Connection: ' + connection_status + '\r\n'
 
         if error_code == 301:
             log += '‫‪Location:‬‬ ‫‪/result.html‬‬'
@@ -94,3 +94,4 @@ server = server(int(sys.argv[1]))
 clientHandler = clienthandler()
 #opening the server with the client handler
 server.open(clientHandler)
+
