@@ -71,8 +71,6 @@ class clienthandler:
                     log = clientHandler.create_log(404, 'Not Found', 'close', '')
                     is_client_connected = False
 
-            print(log.decode())
-
             client_socket.send(log)
 
             if connection_status == 'close':
@@ -86,19 +84,23 @@ class clienthandler:
         log = "HTTP/1.1‬‬ " + str(error_code) + ' ' + status + '\r\n' + "Connection: " + connection_status + '\r\n'
 
         if error_code == 301:
-            log += '‫‪Location:‬‬ ‫‪/result.html‬‬\r\n'
+            log += '‫‪Location:‬‬ ‫‪/result.html‬‬' + '\r\n'
         if error_code == 200 and content:
             log += '‫‪Content-Length:‬‬ ' + str(len(content)) + '\r\n'
 
         log += '\r\n'
 
         log = log.encode()
+        
+        print(log.decode())
 
         if error_code == 200 and content:
             try:
-                log += content
+                log += content.encode()
+                print("string")
             except:
-                log += str(content).encode()
+                log += content
+                print("binary")
                 
         return log
 
