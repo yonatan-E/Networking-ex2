@@ -40,7 +40,7 @@ class clienthandler:
             print(message)
 
             #getting the file name
-            file_name = message.split('GET /')[1].split(' HTTP')[0]
+            file_name = message.split('/')[1].split(' HTTP')[0]
             if file_name == '':
                 file_name = 'index.html'
 
