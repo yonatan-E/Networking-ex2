@@ -59,7 +59,7 @@ class clienthandler:
             #if the file name is 'redirect', the error code will be 301
             if file_name == 'redirect':
                 #creating a log with error code 301
-                log = create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
+                log = clienthandler.create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
                 #in this case, the connection will be closed
                 keep_connected = False
             #else, trying to open the file
@@ -69,14 +69,14 @@ class clienthandler:
                     open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpg') or file_name.endswith('jpeg') else 'r'
                     f = open(file_name, open_mode)
                     #creating a log with error code 200, which contains the file content
-                    log = create_log(200, 'OK', connection_status, f.read())
+                    log = clienthandler.create_log(200, 'OK', connection_status, f.read())
                     # in this case, the continue of the connection will be according to the connection status which appears in the message 
                     if connection_status == 'close':
                         keep_connected = False
                 #if the file was not found, the error code will be 404
                 except FileNotFoundError:
                     #creating a log with status 404
-                    log = create_log(404, 'Not Found', 'close', '')
+                    log = clienthandler.create_log(404, 'Not Found', 'close', '')
                     #in this case, the connection will be closed
                     keep_connected = False
 
