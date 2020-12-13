@@ -48,7 +48,7 @@ class clienthandler:
             print(message)
 
             #getting the file name
-            file_name = message.split('/')[1].split(' HTTP')[0]
+            file_name = message.split('GET /')[1].split(' HTTP')[0]
             if file_name == '':
                 file_name = 'index.html'
 
@@ -66,7 +66,7 @@ class clienthandler:
             else:
                 try:
                     #getting the correct open mode and opening the file
-                    open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpg') or file_name.endswith('jpeg') else 'r'
+                    open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpg') else 'r'
                     f = open(file_name, open_mode)
                     #creating a log with error code 200, which contains the file content
                     log = clienthandler.create_log(200, 'OK', connection_status, f.read())
