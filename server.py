@@ -17,8 +17,9 @@ class server:
         s.listen(self.__backlog)
 
         while True:
+            #accepting a connection from a new client
             client_socket, client_address = s.accept()
-            print('Connection from: ', client_address)
+            #handling the request of the client
             clientHandler.handleRequest(client_socket)
 
 class clienthandler:
@@ -27,16 +28,23 @@ class clienthandler:
 
     def handleRequest(self, client_socket):
 
-        is_client_connected = True
-        while is_client_connected:
-            #getting the message from the client
+        keep_connected = True
+        while keep_connected:
+            #setting a 1 second timeout for the connection
             client_socket.settimeout(1)
             try:
+                #getting the message from the client
                 data = client_socket.recv(self.__buffer_size)
+                #if the message is empty, then closing the connection
+                if not data:
+                    break
+            #if the timeout limit has been over, then closing the connection
+            # (if the timeout limit is over, then the client socket will be blocked, so calling to recv will throw an exception)
             except:
                 break
+            
+            #getting the decoded message and printing it
             message = data.decode()
-
             print(message)
 
             #getting the file name
@@ -48,34 +56,34 @@ class clienthandler:
             tmp = message.find('Connection: ') + len('Connection: ')
             connection_status = message[tmp:message.find('\r\n', tmp)]
 
-            #getting the correct log
-            #if the file name is /redirect, the error code will be 301
+            #if the file name is 'redirect', the error code will be 301
             if file_name == 'redirect':
-                log = clientHandler.create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
-                is_client_connected = False
+                #creating a log with error code 301
+                log = create_log(301, '‫‪Moved‬‬ ‫‪Permanently‬‬', 'close', '')
+                #in this case, the connection will be closed
+                keep_connected = False
             #else, trying to open the file
             else:
                 try:
-                    #getting the correct open mode
+                    #getting the correct open mode and opening the file
                     open_mode = 'rb' if file_name.endswith('ico') or file_name.endswith('jpg') or file_name.endswith('jpeg') else 'r'
                     f = open(file_name, open_mode)
-                    content = f.read()
-
-                    #if the message is empty, then closing the connection with the client
-                    if not content:
-                        break
-
-                    log = clientHandler.create_log(200, 'OK', connection_status, content)
+                    #creating a log with error code 200, which contains the file content
+                    log = create_log(200, 'OK', connection_status, f.read())
+                    # in this case, the continue of the connection will be according to the connection status which appears in the message 
+                    if connection_status == 'close':
+                        keep_connected = False
                 #if the file was not found, the error code will be 404
                 except FileNotFoundError:
-                    log = clientHandler.create_log(404, 'Not Found', 'close', '')
-                    is_client_connected = False
+                    #creating a log with status 404
+                    log = create_log(404, 'Not Found', 'close', '')
+                    #in this case, the connection will be closed
+                    keep_connected = False
 
+            #sending the log to the client
             client_socket.send(log)
 
-            if connection_status == 'close':
-                is_client_connected = False
-
+        #closing the connection with the client
         client_socket.close()
 
     @staticmethod
@@ -89,18 +97,13 @@ class clienthandler:
             log += '‫‪Content-Length:‬‬ ' + str(len(content)) + '\r\n'
 
         log += '\r\n'
-
         log = log.encode()
-        
-        print(log.decode())
 
         if error_code == 200 and content:
             try:
                 log += content.encode()
-                print("string")
             except:
                 log += content
-                print("binary")
                 
         return log
 
